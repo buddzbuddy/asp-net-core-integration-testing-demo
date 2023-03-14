@@ -8,7 +8,8 @@
         }
 
         public static User Create(string firstName, string lastName) =>
-            new User { FirstName = firstName, LastName = lastName };
+            new()
+            { FirstName = firstName, LastName = lastName };
 
         public int Id { get; private set; }
         public string FirstName { get; private set; } = string.Empty;

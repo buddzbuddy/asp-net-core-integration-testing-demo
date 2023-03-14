@@ -68,12 +68,10 @@ namespace AspNetCoreTesting.Api.Tests
                         validateDatabase: async cmd =>
                         {
                             cmd.CommandText = $"SELECT TOP 1 * FROM Users WHERE Id = {userId}";
-                            using (var rs = await cmd.ExecuteReaderAsync())
-                            {
-                                Assert.True(await rs.ReadAsync());
-                                Assert.Equal("John", rs["FirstName"]);
-                                Assert.Equal("Doe", rs["LastName"]);
-                            }
+                            using var rs = await cmd.ExecuteReaderAsync();
+                            Assert.True(await rs.ReadAsync());
+                            Assert.Equal("John", rs["FirstName"]);
+                            Assert.Equal("Doe", rs["LastName"]);
                         }
                     );
         }

@@ -32,11 +32,9 @@ namespace AspNetCoreTesting.Api.Tests.Infrastructure
                         {
                             var ctx = services.GetRequiredService<ApiContext>();
                             var conn = ctx.Database.GetDbConnection();
-                            using (var cmd = conn.CreateCommand())
-                            {
-                                cmd.Transaction = ctx.Database.CurrentTransaction?.GetDbTransaction();
-                                await populateDatabase(cmd);
-                            }
+                            using var cmd = conn.CreateCommand();
+                            cmd.Transaction = ctx.Database.CurrentTransaction?.GetDbTransaction();
+                            await populateDatabase(cmd);
                         }
                     },
                     client => {

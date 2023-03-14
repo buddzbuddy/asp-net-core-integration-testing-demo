@@ -18,14 +18,13 @@ namespace AspNetCoreTesting.Api.Tests.Infrastructure
 {
     public class TestHelper<TEntryPoint> where TEntryPoint : class
     {
-        private Dictionary<Type, Func<IServiceProvider, DbContext>> _dbContexts = new();
-        private Dictionary<Type, Func<SqlCommand, Task>> _dbPreparations = new();
-        private List<Action<IServiceCollection>> _serviceOverrides = new();
-        private List<Action<HttpClient>> _clientPreparations = new();
-        private Dictionary<Type, Func<SqlCommand, Task>> _postTestDbValidations = new();
+        private readonly Dictionary<Type, Func<IServiceProvider, DbContext>> _dbContexts = new();
+        private readonly Dictionary<Type, Func<SqlCommand, Task>> _dbPreparations = new();
+        private readonly List<Action<IServiceCollection>> _serviceOverrides = new();
+        private readonly List<Action<HttpClient>> _clientPreparations = new();
+        private readonly Dictionary<Type, Func<SqlCommand, Task>> _postTestDbValidations = new();
         private string? _environmentName;
-        private IDictionary<string, string>?
-         _config;
+        private IDictionary<string, string>? _config;
 
         public TestHelper<TEntryPoint> AddDbContext<TContext>(string connectionString) where TContext : DbContext
         {

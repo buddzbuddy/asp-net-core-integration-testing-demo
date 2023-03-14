@@ -88,45 +88,39 @@ namespace AspNetCoreTesting.Api.Tests
         {
             var application = GetWebApplication();
 
-            using (var services = application.Services.CreateScope())
+            using var services = application.Services.CreateScope();
+            IDbContextTransaction? transaction = null;
+            try
             {
-                IDbContextTransaction? transaction = null;
-                try
-                {
-                    var ctx = services.ServiceProvider.GetRequiredService<ApiContext>();
-                    transaction = ctx.Database.BeginTransaction();
+                var ctx = services.ServiceProvider.GetRequiredService<ApiContext>();
+                transaction = ctx.Database.BeginTransaction();
 
-                    var client = application.CreateClient();
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", base64EncodedAuthenticationString);
+                var client = application.CreateClient();
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", base64EncodedAuthenticationString);
 
-                    var response = await client.PutAsJsonAsync("/users/", new { firstName = "John", lastName = "Doe" });
+                var response = await client.PutAsJsonAsync("/users/", new { firstName = "John", lastName = "Doe" });
 
-                    dynamic user = JObject.Parse(await response.Content.ReadAsStringAsync());
+                dynamic user = JObject.Parse(await response.Content.ReadAsStringAsync());
 
-                    Assert.Equal("John", (string)user.firstName);
-                    Assert.Equal("Doe", (string)user.lastName);
-                    Assert.Equal(System.Net.HttpStatusCode.Created, response.StatusCode);
-                    Assert.Matches("^http:\\/\\/localhost\\/users\\/\\d+$", response.Headers.Location!.AbsoluteUri.ToLower());
+                Assert.Equal("John", (string)user.firstName);
+                Assert.Equal("Doe", (string)user.lastName);
+                Assert.Equal(System.Net.HttpStatusCode.Created, response.StatusCode);
+                Assert.Matches("^http:\\/\\/localhost\\/users\\/\\d+$", response.Headers.Location!.AbsoluteUri.ToLower());
 
-                    var userId = int.Parse(response.Headers.Location!.PathAndQuery.Substring(response.Headers.Location!.PathAndQuery.LastIndexOf("/") + 1));
+                var userId = int.Parse(response.Headers.Location!.PathAndQuery[(response.Headers.Location!.PathAndQuery.LastIndexOf("/") + 1)..]);
 
-                    var conn = ctx.Database.GetDbConnection();
-                    using (var cmd = conn.CreateCommand())
-                    {
-                        cmd.Transaction = transaction.GetDbTransaction();
-                        cmd.CommandText = $"SELECT TOP 1 * FROM Users WHERE Id = {userId}";
-                        using (var rs = await cmd.ExecuteReaderAsync())
-                        {
-                            Assert.True(await rs.ReadAsync());
-                            Assert.Equal("John", rs["FirstName"]);
-                            Assert.Equal("Doe", rs["LastName"]);
-                        }
-                    }
-                }
-                finally
-                {
-                    transaction?.Rollback();
-                }
+                var conn = ctx.Database.GetDbConnection();
+                using var cmd = conn.CreateCommand();
+                cmd.Transaction = transaction.GetDbTransaction();
+                cmd.CommandText = $"SELECT TOP 1 * FROM Users WHERE Id = {userId}";
+                using var rs = await cmd.ExecuteReaderAsync();
+                Assert.True(await rs.ReadAsync());
+                Assert.Equal("John", rs["FirstName"]);
+                Assert.Equal("Doe", rs["LastName"]);
+            }
+            finally
+            {
+                transaction?.Rollback();
             }
         }
 
@@ -135,27 +129,25 @@ namespace AspNetCoreTesting.Api.Tests
         {
             var application = GetWebApplication();
 
-            using (var services = application.Services.CreateScope())
+            using var services = application.Services.CreateScope();
+            IDbContextTransaction? transaction = null;
+            try
             {
-                IDbContextTransaction? transaction = null;
-                try
-                {
-                    var ctx = services.ServiceProvider.GetRequiredService<ApiContext>();
-                    transaction = ctx.Database.BeginTransaction();
+                var ctx = services.ServiceProvider.GetRequiredService<ApiContext>();
+                transaction = ctx.Database.BeginTransaction();
 
-                    var client = application.CreateClient();
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", base64EncodedAuthenticationString);
+                var client = application.CreateClient();
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", base64EncodedAuthenticationString);
 
-                    var response = await client.PutAsJsonAsync("/users/", new { firstName = "John", lastName = "Doe" });
+                var response = await client.PutAsJsonAsync("/users/", new { firstName = "John", lastName = "Doe" });
 
-                    A.CallTo(() =>
-                        NotificationServiceFake.SendUserCreatedNotification(A<User>.That.Matches(x => x.FirstName == "John" && x.LastName == "Doe"))
-                    ).MustHaveHappened();
-                }
-                finally
-                {
-                    transaction?.Rollback();
-                }
+                A.CallTo(() =>
+                    NotificationServiceFake.SendUserCreatedNotification(A<User>.That.Matches(x => x.FirstName == "John" && x.LastName == "Doe"))
+                ).MustHaveHappened();
+            }
+            finally
+            {
+                transaction?.Rollback();
             }
         }
 
